@@ -1,2 +1,2 @@
 # chronicle-spring-logger
-Spring Boot starter for ~300ns async logging via Chronicle Queue. Off-heap, crash-safe, zero config.
+Spring Boot starter for async logging via Chronicle Queue. Off-heap, crash-safe, zero config.
