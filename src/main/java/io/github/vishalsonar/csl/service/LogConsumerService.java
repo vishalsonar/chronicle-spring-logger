@@ -1,13 +1,13 @@
 package io.github.vishalsonar.csl.service;
 
-import io.github.vishalsonar.csl.configuration.AppenderProperties;
 import io.github.vishalsonar.csl.event.LogEvent;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import lombok.RequiredArgsConstructor;
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.queue.ExcerptTailer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ExecutorService;
@@ -16,22 +16,29 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
-@RequiredArgsConstructor
 public class LogConsumerService {
 
-    @Qualifier("chronicleLogQueue")
-    private final ChronicleQueue chronicleLogQueue;
+    @Value("${chronicle-spring-logger.consumerThreadName}")
+    private String threadName;
 
-    private final LogFileWriterService fileWriter;
-    private final AppenderProperties properties;
-    private final AtomicBoolean running = new AtomicBoolean(false);
+    @Value("${chronicle-spring-logger.pollIntervalMs}")
+    private long pollIntervalMs;
+
+    @Autowired
+    @Qualifier("chronicleLogQueue")
+    private ChronicleQueue chronicleLogQueue;
+
+    @Autowired
+    private LogFileWriterService fileWriter;
+
+    private AtomicBoolean running = new AtomicBoolean(false);
     private ExecutorService executor;
 
     @PostConstruct
     public void start() {
         running.set(true);
         executor = Executors.newSingleThreadExecutor(runnable -> {
-            Thread thread = new Thread(runnable, properties.getConsumerThreadName());
+            Thread thread = new Thread(runnable, threadName);
             thread.setDaemon(true);
             thread.setPriority(Thread.MIN_PRIORITY);
             return thread;
@@ -44,9 +51,9 @@ public class LogConsumerService {
         while (running.get() && !Thread.currentThread().isInterrupted()) {
             try {
                 if (!tryReadOne(tailer)) {
-                    Thread.sleep(properties.getPollIntervalMs());
+                    Thread.sleep(pollIntervalMs);
                 }
-            } catch (InterruptedException e) {
+            } catch (InterruptedException _) {
                 Thread.currentThread().interrupt();
             } catch (Exception e) {
                 System.err.println("[ChronicleLogger] Consumer error: " + e.getMessage());
@@ -78,6 +85,7 @@ public class LogConsumerService {
     private void flushRemaining(ExcerptTailer tailer) {
         System.out.println("[ChronicleLogger] Flushing remaining logs before shutdown...");
         while (tryReadOne(tailer)) {
+            // Intentionally empty: draining the queue
         }
     }
 
@@ -90,7 +98,7 @@ public class LogConsumerService {
                 if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
                     executor.shutdownNow();
                 }
-            } catch (InterruptedException e) {
+            } catch (InterruptedException _) {
                 executor.shutdownNow();
                 Thread.currentThread().interrupt();
             }

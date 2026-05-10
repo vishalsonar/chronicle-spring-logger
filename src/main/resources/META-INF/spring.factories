@@ -1,0 +1,2 @@
+org.springframework.context.ApplicationListener=io.github.vishalsonar.csl.configuration.AppenderListener
+org.springframework.boot.EnvironmentPostProcessor=io.github.vishalsonar.csl.configuration.AppenderPropertyPostProcessor

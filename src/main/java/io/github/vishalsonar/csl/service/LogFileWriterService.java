@@ -9,13 +9,11 @@ import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.core.rolling.RollingFileAppender;
 import ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy;
 import ch.qos.logback.core.util.FileSize;
-import io.github.vishalsonar.csl.configuration.AppenderProperties;
 import io.github.vishalsonar.csl.event.LogEvent;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Files;
@@ -24,11 +22,19 @@ import java.nio.file.Paths;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class LogFileWriterService {
 
-    @NonNull
-    private final AppenderProperties properties;
+    @Value("${chronicle-spring-logger.logFilePath}")
+    private String logFilePath;
+
+    @Value("${chronicle-spring-logger.logPattern}")
+    private String logPattern;
+
+    @Value("${chronicle-spring-logger.maxHistoryDays}")
+    private int maxHistoryDays;
+
+    @Value("${chronicle-spring-logger.totalSizeCap}")
+    private String totalSizeCap;
 
     private ch.qos.logback.classic.Logger privateLogger;
     private RollingFileAppender<ILoggingEvent> fileAppender;
@@ -37,28 +43,28 @@ public class LogFileWriterService {
     public void init() {
         try {
             LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-            Path logPath = Paths.get(properties.getLogFilePath());
+            Path logPath = Paths.get(logFilePath);
             Files.createDirectories(logPath.getParent());
 
             var encoder = new PatternLayoutEncoder();
             encoder.setContext(context);
-            encoder.setPattern(properties.getLogPattern());
+            encoder.setPattern(logPattern);
             encoder.start();
 
             fileAppender = new RollingFileAppender<>();
             fileAppender.setContext(context);
             fileAppender.setName("CHRONICLE_FILE_WRITER");
-            fileAppender.setFile(properties.getLogFilePath());
+            fileAppender.setFile(logFilePath);
             fileAppender.setEncoder(encoder);
             fileAppender.setAppend(true);
 
             var policy = new SizeAndTimeBasedRollingPolicy<ILoggingEvent>();
             policy.setContext(context);
             policy.setParent(fileAppender);
-            policy.setMaxHistory(properties.getMaxHistoryDays());
-            policy.setTotalSizeCap(FileSize.valueOf(properties.getTotalSizeCap()));
+            policy.setMaxHistory(maxHistoryDays);
+            policy.setTotalSizeCap(FileSize.valueOf(totalSizeCap));
             policy.setMaxFileSize(FileSize.valueOf("50MB"));
-            policy.setFileNamePattern(properties.getLogFilePath().replace(".log", "") + ".%d{yyyy-MM-dd}.%i.log");
+            policy.setFileNamePattern(logFilePath.replace(".log", "") + ".%d{yyyy-MM-dd}.%i.log");
             policy.start();
 
             fileAppender.setRollingPolicy(policy);

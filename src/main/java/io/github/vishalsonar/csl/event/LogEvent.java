@@ -1,14 +1,10 @@
 package io.github.vishalsonar.csl.event;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import net.openhft.chronicle.wire.Marshallable;
 import net.openhft.chronicle.wire.WireIn;
 import net.openhft.chronicle.wire.WireOut;
 import org.jetbrains.annotations.NotNull;
 
-@Data
-@NoArgsConstructor
 public class LogEvent implements Marshallable {
 
     private String level;
@@ -19,14 +15,67 @@ public class LogEvent implements Marshallable {
     private String exception;
     private long timestamp;
 
-    public LogEvent(long timestamp, String level, String logger, String thread, long processId, String message, String exception) {
-        this.timestamp = timestamp;
+    public String getLevel() {
+        return level;
+    }
+
+    public LogEvent setLevel(String level) {
         this.level = level;
+        return this;
+    }
+
+    public String getLogger() {
+        return logger;
+    }
+
+    public LogEvent setLogger(String logger) {
         this.logger = logger;
+        return this;
+    }
+
+    public String getThread() {
+        return thread;
+    }
+
+    public LogEvent setThread(String thread) {
         this.thread = thread;
+        return this;
+    }
+
+    public long getProcessId() {
+        return processId;
+    }
+
+    public LogEvent setProcessId(long processId) {
         this.processId = processId;
+        return this;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public LogEvent setMessage(String message) {
         this.message = message;
+        return this;
+    }
+
+    public String getException() {
+        return exception;
+    }
+
+    public LogEvent setException(String exception) {
         this.exception = exception;
+        return this;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public LogEvent setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+        return this;
     }
 
     @Override
